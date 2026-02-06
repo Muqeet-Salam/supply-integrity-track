@@ -67,6 +67,7 @@ async function main() {
 
   console.log("\n🎉 Batch creation completed!");
   console.log("💡 Next step: npm run mark-ready");
+  console.log("📱 Generate QR code: npm run generate-qr", createdBatchId);
 }
 
 main()

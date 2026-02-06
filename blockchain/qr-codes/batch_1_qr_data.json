@@ -1,0 +1,9 @@
+{
+  "batchId": 1,
+  "contractAddress": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+  "network": "localhost",
+  "generatedAt": "2026-02-06T18:42:50.463Z",
+  "verificationUrl": "https://etherscan.io/address/0x5FbDB2315678afecb367f032d93F642f64180aa3",
+  "scanInstructions": "Use 'npm run scan-qr' to read this QR code",
+  "type": "supply-chain-batch"
+}

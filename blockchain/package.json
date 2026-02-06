@@ -8,10 +8,18 @@
     "setup-roles": "npx hardhat run scripts/setupRoles.js --network localhost",
     "create-batch": "npx hardhat run scripts/createBatch.js --network localhost",
     "mark-ready": "npx hardhat run scripts/markReadyForSale.js --network localhost",
-    "view-history": "npx hardhat run scripts/viewHistory.js --network localhost"
+    "view-history": "npx hardhat run scripts/viewHistory.js --network localhost",
+    "generate-qr": "node utils/generateQR.js",
+    "scan-qr": "node utils/scanQR.js",
+    "batch-qr-history": "node utils/batchQRHistory.js",
+    "update-qr-live": "npx hardhat run scripts/updateQRLive.js --network localhost"
   },
   "devDependencies": {
-    "hardhat": "^3.1.7",
-    "@nomicfoundation/hardhat-toolbox": "^6.1.0"
+    "hardhat": "^2.19.4",
+    "@nomicfoundation/hardhat-toolbox": "^2.0.2"
+  },
+  "dependencies": {
+    "qrcode": "^1.5.4",
+    "qrcode-reader": "^1.0.4"
   }
 }
