@@ -1,22 +1,17 @@
 {
-  "name": "blockchain",
+  "name": "supply-integrity-track",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "compile": "npx hardhat compile",
+    "deploy": "npx hardhat run scripts/deploy.js --network localhost",
+    "node": "npx hardhat node",
+    "setup-roles": "npx hardhat run scripts/setupRoles.js --network localhost",
+    "create-batch": "npx hardhat run scripts/createBatch.js --network localhost",
+    "mark-ready": "npx hardhat run scripts/markReadyForSale.js --network localhost",
+    "view-history": "npx hardhat run scripts/viewHistory.js --network localhost"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "module",
   "devDependencies": {
-    "@nomicfoundation/hardhat-viem": "^3.0.2",
-    "@types/node": "^22.19.9",
     "hardhat": "^3.1.7",
-    "typescript": "~5.8.0"
-  },
-  "dependencies": {
-    "@openzeppelin/contracts": "^5.4.0"
+    "@nomicfoundation/hardhat-toolbox": "^6.1.0"
   }
 }
