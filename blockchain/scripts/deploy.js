@@ -10,14 +10,15 @@ async function main() {
   const [deployer, manufacturer, supplier, ...users] = signers;
 
   console.log("Deploying contracts with account:", deployer.address);
-  console.log("Account balance:", hre.ethers.formatEther(await hre.ethers.provider.getBalance(deployer.address)), "ETH\n");
+  const balance = await hre.ethers.provider.getBalance(deployer.address);
+  console.log("Account balance:", (Number(balance) / 1e18).toFixed(4), "ETH\n");
 
   // Deploy SupplyChain contract
   const SupplyChain = await hre.ethers.getContractFactory("SupplyChain");
+  console.log("📦 Deploying SupplyChain contract...");
   const supplyChain = await SupplyChain.deploy();
-  await supplyChain.waitForDeployment();
 
-  const contractAddress = await supplyChain.getAddress();
+  const contractAddress = supplyChain.address;
   console.log("✅ SupplyChain deployed to:", contractAddress);
 
   // Save contract address and account info to a file for other scripts

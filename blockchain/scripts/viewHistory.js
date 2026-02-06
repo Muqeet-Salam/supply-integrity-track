@@ -26,7 +26,7 @@ async function main() {
 
   // Get current batch count
   const currentBatchId = await supplyChain.getCurrentBatchId();
-  if (currentBatchId === 0n) {
+  if (Number(currentBatchId) === 0) {
     console.log("⚠️  No batches found in the system.");
     console.log("💡 Create a batch first: npm run create-batch");
     return;
@@ -36,15 +36,15 @@ async function main() {
 
   // Show history for the most recent batch by default
   // You can modify this to accept command line arguments for specific batch ID
-  let batchId = currentBatchId - 1n;
+  let batchId = Number(currentBatchId) - 1;
   
   if (process.argv.length > 2) {
     const specifiedBatchId = parseInt(process.argv[2]);
-    if (specifiedBatchId >= 0 && specifiedBatchId < currentBatchId) {
-      batchId = BigInt(specifiedBatchId);
+    if (specifiedBatchId >= 0 && specifiedBatchId < Number(currentBatchId)) {
+      batchId = specifiedBatchId;
       console.log(`🎯 Showing history for specified batch ID: ${batchId}`);
     } else {
-      console.log(`❌ Invalid batch ID. Available range: 0 to ${currentBatchId - 1n}`);
+      console.log(`❌ Invalid batch ID. Available range: 0 to ${Number(currentBatchId) - 1}`);
       return;
     }
   } else {
@@ -94,13 +94,26 @@ async function main() {
         const block = await hre.ethers.provider.getBlock(event.blockNumber);
         const timestamp = new Date(block.timestamp * 1000);
         
-        console.log(`${i + 1}. ${event.fragment.name.toUpperCase()}`);
+        // Get event name from topics or args
+        let eventName = "UNKNOWN_EVENT";
+        if (event.args && event.args.length > 0) {
+          // Check if it has manufacturer argument (BatchCreated event)
+          if (event.args.manufacturer) {
+            eventName = "BatchCreated";
+          } 
+          // Check if it has newStatus argument (StatusUpdated event)
+          else if (event.args.newStatus !== undefined) {
+            eventName = "StatusUpdated";
+          }
+        }
         
-        if (event.fragment.name === "BatchCreated") {
+        console.log(`${i + 1}. ${eventName.toUpperCase()}`);
+        
+        if (eventName === "BatchCreated") {
           console.log(`   🏭 Manufactured by: ${event.args.manufacturer}`);
           console.log(`   📦 Product: ${event.args.productName}`);
-        } else if (event.fragment.name === "StatusUpdated") {
-          const status = event.args.newStatus === 0n ? "Manufactured" : "Ready for Sale";
+        } else if (eventName === "StatusUpdated") {
+          const status = Number(event.args.newStatus) === 0 ? "Manufactured" : "Ready for Sale";
           console.log(`   📊 Status changed to: ${status}`);
           console.log(`   👤 Updated by: ${event.args.updatedBy}`);
         }

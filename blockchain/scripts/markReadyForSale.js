@@ -34,12 +34,12 @@ async function main() {
 
   // Get current batch count
   const currentBatchId = await supplyChain.getCurrentBatchId();
-  if (currentBatchId === 0n) {
+  if (Number(currentBatchId) === 0) {
     throw new Error("❌ No batches found. Please create a batch first: npm run create-batch");
   }
 
   // Use the most recent batch (last one created)
-  const batchId = currentBatchId - 1n;
+  const batchId = Number(currentBatchId) - 1;
   console.log("📦 Working with batch ID:", batchId.toString());
 
   // Get current batch status
