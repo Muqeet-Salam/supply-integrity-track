@@ -24,10 +24,15 @@ async function main() {
   const SupplyChain = await hre.ethers.getContractFactory("SupplyChain");
   const supplyChain = SupplyChain.attach(deployment.contractAddress);
 
-  // Get batch ID - if not provided, use the most recent batch
+  // Get batch ID - from environment variable or command line arguments
   let batchId;
-  if (process.argv.length > 2 && !isNaN(process.argv[2])) {
-    batchId = parseInt(process.argv[2]);
+  const envBatchId = process.env.BATCH_ID;
+  const argBatchId = process.argv[2];
+  
+  if (envBatchId !== undefined && !isNaN(envBatchId)) {
+    batchId = parseInt(envBatchId);
+  } else if (argBatchId !== undefined && !isNaN(argBatchId)) {
+    batchId = parseInt(argBatchId);
     console.log("📦 Using provided Batch ID:", batchId);
   } else {
     // Get the most recent batch
@@ -69,7 +74,9 @@ async function main() {
       network: hre.network.name,
       createdAt: new Date(Number(batchData.timestamp) * 1000).toISOString(),
       updatedAt: new Date().toISOString(),
-      verificationUrl: `https://etherscan.io/address/${deployment.contractAddress}`,
+      verificationUrl: hre.network.name === 'localhost' ? 
+        `Localhost network - Contract: ${deployment.contractAddress}` : 
+        `https://etherscan.io/address/${deployment.contractAddress}`,
       type: "supply-chain-batch-updated"
     };
 

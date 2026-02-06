@@ -59,7 +59,9 @@ async function generateQRForBatch() {
     contractAddress: deployment.contractAddress,
     network: deployment.network || 'localhost',
     generatedAt: new Date().toISOString(),
-    verificationUrl: `https://etherscan.io/address/${deployment.contractAddress}`,
+    verificationUrl: deployment.network === 'localhost' ? 
+      `Localhost network - Contract: ${deployment.contractAddress}` :
+      `https://etherscan.io/address/${deployment.contractAddress}`,
     scanInstructions: "Use 'npm run scan-qr' to read this QR code",
     type: "supply-chain-batch"
   };

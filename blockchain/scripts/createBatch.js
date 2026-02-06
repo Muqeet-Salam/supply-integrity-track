@@ -5,6 +5,17 @@ const path = require("path");
 async function main() {
   console.log("📦 Creating a new batch...\n");
   
+  // Get product name from environment variable (set by wrapper script)
+  const productName = process.env.PRODUCT_NAME || process.argv[2];
+  if (!productName) {
+    console.error("❌ Product name is required!");
+    console.log("💡 Usage: npm run create-batch \"Product Name\"");
+    console.log("💡 Example: npm run create-batch \"Premium Coffee Beans - Colombian\"");
+    process.exit(1);
+  }
+  
+  console.log("🏷️ Product Name:", productName);
+  
   // Load deployment info
   const deploymentPath = path.join(__dirname, "../deployment.json");
   if (!fs.existsSync(deploymentPath)) {
@@ -37,7 +48,6 @@ async function main() {
   console.log("🔢 Current batch ID:", currentBatchId.toString());
 
   // Create a new batch
-  const productName = "Premium Coffee Beans - Batch #" + Date.now();
   console.log("🏭 Creating batch for product:", productName);
   
   const tx = await supplyChain.connect(manufacturer).createBatch(productName);
@@ -65,9 +75,26 @@ async function main() {
   console.log("   Status:", Number(batchData.status) === 0 ? "Manufactured" : "Ready for Sale");
   console.log("   Created:", new Date(Number(batchData.timestamp) * 1000).toLocaleString());
 
+  console.log("\n🔲 Generating QR code for batch...");
+  
+  // Auto-generate QR code
+  try {
+    const { execSync } = require('child_process');
+    const qrCommand = `npm run update-qr-live ${createdBatchId}`;
+    const qrResult = execSync(qrCommand, { 
+      cwd: path.join(__dirname, '..'),
+      encoding: 'utf8' 
+    });
+    console.log("✅ QR Code generated successfully!");
+    console.log(qrResult.trim());
+  } catch (qrError) {
+    console.warn("⚠️ QR generation failed, but batch was created successfully:", qrError.message);
+    console.log("💡 You can generate QR manually: npm run update-qr-live", createdBatchId);
+  }
+  
   console.log("\n🎉 Batch creation completed!");
   console.log("💡 Next step: npm run mark-ready");
-  console.log("📱 Generate QR code: npm run generate-qr", createdBatchId);
+  console.log("📱 Scan QR: npm run scan-qr qr-codes/batch_" + createdBatchId + "_live_qr_data.json");
 }
 
 main()

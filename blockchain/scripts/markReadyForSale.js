@@ -32,15 +32,30 @@ async function main() {
   
   console.log("✅ Supplier role verified");
 
-  // Get current batch count
+  // Get batch ID from environment variable or command line or use most recent
+  let batchId;
+  const envBatchId = process.env.BATCH_ID;
+  const specifiedBatchId = envBatchId || process.argv[2];
+  
+  // Get current batch count for validation
   const currentBatchId = await supplyChain.getCurrentBatchId();
   if (Number(currentBatchId) === 0) {
-    throw new Error("❌ No batches found. Please create a batch first: npm run create-batch");
+    throw new Error("❌ No batches found. Please create a batch first: npm run create-batch \"Product Name\"");
   }
 
-  // Use the most recent batch (last one created)
-  const batchId = Number(currentBatchId) - 1;
-  console.log("📦 Working with batch ID:", batchId.toString());
+  if (specifiedBatchId !== undefined) {
+    const parsedBatchId = parseInt(specifiedBatchId);
+    if (isNaN(parsedBatchId) || parsedBatchId < 0 || parsedBatchId >= Number(currentBatchId)) {
+      throw new Error(`❌ Invalid batch ID: ${specifiedBatchId}. Available range: 0 to ${Number(currentBatchId) - 1}`);
+    }
+    batchId = parsedBatchId;
+    console.log("🎯 Working with specified batch ID:", batchId);
+  } else {
+    // Use the most recent batch (last one created)
+    batchId = Number(currentBatchId) - 1;
+    console.log("📦 Working with most recent batch ID:", batchId);
+    console.log("💡 To specify batch ID: npm run mark-ready [batchId]");
+  }
 
   // Get current batch status
   const batchData = await supplyChain.getBatch(batchId);
