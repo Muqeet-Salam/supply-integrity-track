@@ -1,29 +1,28 @@
-const batches = new Map();
-const transfers = [];
-const alerts = [];
+import { Batch, Transfer, Alert } from "./mongoModels.js";
 
-export function addBatch(batchId) {
-  if (!batches.has(batchId)) {
-    batches.set(batchId, { batchId, createdAt: Date.now() });
+export async function addBatch(batchId) {
+  const exists = await Batch.findOne({ batchId });
+  if (!exists) {
+    await Batch.create({ batchId });
   }
 }
 
-export function addTransfer(t) {
-  transfers.push(t);
+export async function addTransfer(t) {
+  await Transfer.create(t);
 }
 
-export function saveAlert(batchId, reason) {
-  alerts.push({ batchId, reason, timestamp: Date.now() });
+export async function saveAlert(batchId, reason) {
+  await Alert.create({ batchId, reason });
 }
 
-export function getBatch(batchId) {
-  return batches.get(batchId);
+export async function getBatch(batchId) {
+  return await Batch.findOne({ batchId });
 }
 
-export function getTransfers(batchId) {
-  return transfers.filter((t) => t.batchId === batchId);
+export async function getTransfers(batchId) {
+  return await Transfer.find({ batchId });
 }
 
-export function getAlerts(batchId) {
-  return alerts.filter((a) => a.batchId === batchId);
+export async function getAlerts(batchId) {
+  return await Alert.find({ batchId });
 }

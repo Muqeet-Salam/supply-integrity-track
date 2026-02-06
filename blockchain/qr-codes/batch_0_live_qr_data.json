@@ -1,13 +1,13 @@
 {
   "batchId": 0,
-  "productName": "Ibuprofen 1000",
+  "productName": "Sudeep's Cock",
   "manufacturer": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
   "supplier": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
   "status": "Ready for Sale",
   "contractAddress": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
   "network": "localhost",
-  "createdAt": "2026-02-06T19:47:31.000Z",
-  "updatedAt": "2026-02-06T19:47:38.290Z",
+  "createdAt": "2026-02-06T22:32:54.000Z",
+  "updatedAt": "2026-02-06T22:33:38.652Z",
   "verificationUrl": "Localhost network - Contract: 0x5FbDB2315678afecb367f032d93F642f64180aa3",
   "type": "supply-chain-batch-updated"
 }
