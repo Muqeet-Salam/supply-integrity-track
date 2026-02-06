@@ -34,22 +34,24 @@ async function main() {
 
   console.log(`📊 Found ${currentBatchId} batch(es) in the system\n`);
 
-  // Show history for the most recent batch by default
-  // You can modify this to accept command line arguments for specific batch ID
-  let batchId = Number(currentBatchId) - 1;
+  // Handle batch ID selection from environment variable or command line
+  let batchId;
+  const envBatchId = process.env.BATCH_ID;
+  const specifiedBatchId = envBatchId || process.argv[2];
   
-  if (process.argv.length > 2) {
-    const specifiedBatchId = parseInt(process.argv[2]);
-    if (specifiedBatchId >= 0 && specifiedBatchId < Number(currentBatchId)) {
-      batchId = specifiedBatchId;
-      console.log(`🎯 Showing history for specified batch ID: ${batchId}`);
-    } else {
-      console.log(`❌ Invalid batch ID. Available range: 0 to ${Number(currentBatchId) - 1}`);
+  if (specifiedBatchId !== undefined) {
+    const parsedBatchId = parseInt(specifiedBatchId);
+    if (isNaN(parsedBatchId) || parsedBatchId < 0 || parsedBatchId >= Number(currentBatchId)) {
+      console.log(`❌ Invalid batch ID: ${specifiedBatchId}. Available range: 0 to ${Number(currentBatchId) - 1}`);
       return;
     }
+    batchId = parsedBatchId;
+    console.log(`🎯 Showing history for specified batch ID: ${batchId}`);
   } else {
+    batchId = Number(currentBatchId) - 1;
     console.log(`🎯 Showing history for most recent batch (ID: ${batchId})`);
-    console.log("💡 To view specific batch: npx hardhat run scripts/viewHistory.js --network localhost -- BATCH_ID\n");
+    console.log("💡 To view specific batch: npm run view-history [batchId]");
+    console.log("💡 To scan QR and get batch ID: npm run scan-qr qr-codes/batch_X_live_qr_data.json\\n");
   }
 
   // Get batch data

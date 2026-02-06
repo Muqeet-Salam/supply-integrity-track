@@ -6,13 +6,14 @@
     "deploy": "npx hardhat run scripts/deploy.js --network localhost",
     "node": "npx hardhat node",
     "setup-roles": "npx hardhat run scripts/setupRoles.js --network localhost",
-    "create-batch": "npx hardhat run scripts/createBatch.js --network localhost",
-    "mark-ready": "npx hardhat run scripts/markReadyForSale.js --network localhost",
-    "view-history": "npx hardhat run scripts/viewHistory.js --network localhost",
+    "create-batch": "node scripts/createBatchWrapper.js",
+    "mark-ready": "node scripts/markReadyWrapper.js",
+    "view-history": "node scripts/viewHistoryWrapper.js",
     "generate-qr": "node utils/generateQR.js",
     "scan-qr": "node utils/scanQR.js",
     "batch-qr-history": "node utils/batchQRHistory.js",
-    "update-qr-live": "npx hardhat run scripts/updateQRLive.js --network localhost"
+    "update-qr-live": "node scripts/updateQRLiveWrapper.js",
+    "workflow-help": "node utils/workflowHelper.js"
   },
   "devDependencies": {
     "hardhat": "^2.19.4",

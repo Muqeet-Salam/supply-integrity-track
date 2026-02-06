@@ -67,7 +67,7 @@ async function scanQR() {
     console.log("🆔 Batch ID:", qrData.batchId);
     console.log("🔗 Contract:", qrData.contractAddress);
     console.log("🌐 Network:", qrData.network);
-    console.log("📅 Generated:", new Date(qrData.generatedAt).toLocaleString());
+    console.log("📅 Generated:", new Date(qrData.createdAt || qrData.updatedAt || qrData.generatedAt).toLocaleString());
     
     if (qrData.productName) {
       console.log("📦 Product:", qrData.productName);
@@ -84,12 +84,17 @@ async function scanQR() {
     
     console.log("\n🔐 QR Verification:");
     console.log("   Type:", qrData.type || 'Unknown');
-    console.log("   Verification URL:", qrData.verificationUrl || 'N/A');
+    // Show verification URL based on network
+    let verificationUrl = qrData.verificationUrl;
+    if (qrData.network === 'localhost') {
+      verificationUrl = `Local network - Contract: ${qrData.contractAddress}`;
+    }
+    console.log("   Verification URL:", verificationUrl || 'N/A');
     
     // Validate QR data structure
     const isValid = qrData.batchId !== undefined && 
                    qrData.contractAddress && 
-                   qrData.generatedAt;
+                   (qrData.createdAt || qrData.updatedAt || qrData.generatedAt);
     
     console.log("\n✅ QR Data Status:", isValid ? "VALID" : "INVALID");
     

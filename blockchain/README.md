@@ -2,6 +2,26 @@
 
 A Hardhat-based Ethereum project for tracking product batches through a supply chain using smart contracts.
 
+# 1. Create batch with custom name + auto QR generation
+npm run create-batch "Organic Colombian Coffee Beans - Premium Roast"
+
+# 2. Scan QR to get batch info  
+npm run scan-qr qr-codes/batch_1_live_qr_data.json
+# → Shows: Batch ID: 1, Status: Manufactured
+
+# 3. Mark ready using batch ID from QR
+npm run mark-ready 1
+
+# 4. Update QR with new status
+npm run update-qr-live 1
+
+# 5. Verify final status
+npm run scan-qr qr-codes/batch_1_live_qr_data.json  
+# → Shows: Status: Ready for Sale ✅
+
+# 6. View complete history
+npm run view-history 1
+
 ## Overview
 
 This project implements a supply chain tracking system where:

@@ -2,69 +2,121 @@
 cd /d "%~dp0"
 echo Current directory: %cd%
 echo.
-echo =====================================
-echo Supply Chain QR + Blockchain Tools  
-echo =====================================
+echo ========================================
+echo 🔄 Supply Chain QR + Blockchain Tools  
+echo ========================================
 echo.
-echo Choose an action:
-echo 1. Start Hardhat Node
-echo 2. Deploy Contracts
-echo 3. Create Batch
-echo 4. Mark Ready for Sale
-echo 5. View History
-echo 6. Generate QR Code (Basic)
-echo 7. Update QR with Live Data
-echo 8. Scan QR Code
-echo 9. View QR History
-echo 10. Exit
+echo 📖 WORKFLOW OPERATIONS:
+echo 1. 🔄 Complete Workflow Guide
+echo 2. 📦 Create Batch (with product name + auto QR)
+echo 3. 🏪 Mark Ready for Sale
+echo 4. 🔍 View History
 echo.
-set /p choice=Enter your choice (1-10): 
+echo 🔗 BLOCKCHAIN SETUP:
+echo 5. 🚀 Start Hardhat Node
+echo 6. 📄 Deploy Contracts  
+echo 7. 👥 Setup Roles
+echo.
+echo 📱 QR OPERATIONS:
+echo 8. 📱 List Available QR Codes
+echo 9. 🔍 Scan QR Code
+echo 10. 🔄 Update QR with Live Data
+echo 11. 📊 View QR History
+echo.
+echo 0. Exit
+echo.
+set /p choice=Enter your choice (0-11): 
 
 if "%choice%"=="1" (
-    echo Starting Hardhat node...
-    npx hardhat node
+    echo 📖 Showing complete workflow guide...
+    echo.
+    npm run workflow-help
 )
 if "%choice%"=="2" (
-    echo Deploying contracts...
-    npx hardhat run scripts/deploy.js --network localhost
+    set /p productname=📦 Enter product name: 
+    if "%productname%"=="" (
+        echo ❌ Product name cannot be empty!
+        goto end
+    )
+    echo.
+    echo 🏭 Creating batch for: %productname%
+    npm run create-batch "%productname%"
 )
 if "%choice%"=="3" (
-    echo Creating new batch...
-    npx hardhat run scripts/createBatch.js --network localhost
+    set /p batchid=🏪 Enter batch ID (or press Enter for most recent): 
+    if "%batchid%"=="" (
+        echo Marking most recent batch ready for sale...
+        npm run mark-ready
+    ) else (
+        echo Marking batch %batchid% ready for sale...
+        npm run mark-ready %batchid%
+    )
 )
 if "%choice%"=="4" (
-    echo Marking batch ready for sale...
-    npx hardhat run scripts/markReadyForSale.js --network localhost
+    set /p batchid=📊 Enter batch ID (or press Enter for most recent): 
+    if "%batchid%"=="" (
+        echo Viewing history for most recent batch...
+        npm run view-history
+    ) else (
+        echo Viewing history for batch %batchid%...
+        npm run view-history %batchid%
+    )
 )
 if "%choice%"=="5" (
-    echo Viewing batch history...
-    npx hardhat run scripts/viewHistory.js --network localhost
+    echo 🚀 Starting Hardhat node...
+    echo 💡 Keep this running in background for blockchain operations
+    npx hardhat node
 )
 if "%choice%"=="6" (
-    set /p batchid=Enter batch ID: 
-    echo Generating basic QR code for batch %batchid%...
-    node utils/generateQR.js %batchid%
+    echo 📄 Deploying contracts...
+    npm run deploy
 )
 if "%choice%"=="7" (
-    set /p batchid=Enter batch ID: 
-    echo Updating QR with live blockchain data for batch %batchid%...
-    npx hardhat run scripts/updateQRLive.js --network localhost -- %batchid%
+    echo 👥 Setting up roles...
+    npm run setup-roles
 )
 if "%choice%"=="8" (
-    echo Scanning QR code...
-    node utils/scanQR.js
+    echo 📱 Available QR Codes:
+    npm run workflow-help list-qr
 )
 if "%choice%"=="9" (
-    set /p batchid=Enter batch ID: 
-    echo Viewing QR history for batch %batchid%...
-    node utils/batchQRHistory.js %batchid%
+    echo.
+    echo 📱 Available QR files:
+    dir qr-codes\*_qr_data.json /b 2>nul
+    echo.
+    set /p qrfile=🔍 Enter QR filename (e.g., batch_0_live_qr_data.json): 
+    if "%qrfile%"=="" (
+        echo ❌ No file specified!
+        goto end
+    )
+    echo Scanning QR: %qrfile%
+    npm run scan-qr qr-codes\%qrfile%
 )
 if "%choice%"=="10" (
-    echo Goodbye!
+    set /p batchid=🔄 Enter batch ID: 
+    if "%batchid%"=="" (
+        echo ❌ Batch ID required!
+        goto end
+    )
+    echo Updating QR with live data for batch %batchid%...
+    npm run update-qr-live %batchid%
+)
+if "%choice%"=="11" (
+    set /p batchid=📊 Enter batch ID: 
+    if "%batchid%"=="" (
+        echo ❌ Batch ID required!
+        goto end
+    )
+    echo Viewing QR history for batch %batchid%...
+    npm run batch-qr-history %batchid%
+)
+if "%choice%"=="0" (
+    echo 👋 Goodbye!
     exit
 )
 
+:end
 echo.
-echo Press any key to continue...
+echo ✅ Operation completed. Press any key to continue...
 pause >nul
 goto :eof
