@@ -1,19 +1,29 @@
-export const batches = new Map();
-export const transfers = new Map();
-export const alerts = new Map();
+const batches = new Map();
+const transfers = [];
+const alerts = [];
 
-export function saveBatch(batchId) {
-  if (!batches.has(batchId)) batches.set(batchId, {});
+export function addBatch(batchId) {
+  if (!batches.has(batchId)) {
+    batches.set(batchId, { batchId, createdAt: Date.now() });
+  }
 }
 
-export function saveTransfer(batchId, from, to) {
-  const record = { from, to, timestamp: Date.now() };
-  if (!transfers.has(batchId)) transfers.set(batchId, []);
-  transfers.get(batchId).push(record);
-  return record;
+export function addTransfer(t) {
+  transfers.push(t);
 }
 
 export function saveAlert(batchId, reason) {
-  if (!alerts.has(batchId)) alerts.set(batchId, []);
-  alerts.get(batchId).push({ reason, timestamp: Date.now() });
+  alerts.push({ batchId, reason, timestamp: Date.now() });
+}
+
+export function getBatch(batchId) {
+  return batches.get(batchId);
+}
+
+export function getTransfers(batchId) {
+  return transfers.filter((t) => t.batchId === batchId);
+}
+
+export function getAlerts(batchId) {
+  return alerts.filter((a) => a.batchId === batchId);
 }
