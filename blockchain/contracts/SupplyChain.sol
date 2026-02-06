@@ -1,73 +1,180 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.24;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
+contract SupplyChain {
+    /*//////////////////////////////////////////////////////////////
+                                ERRORS
+    //////////////////////////////////////////////////////////////*/
+    error NotManufacturer();
+    error NotSupplier();
+    error InvalidBatch();
+    error InvalidStatusTransition();
 
-contract SupplyChain is AccessControl {
+    /*//////////////////////////////////////////////////////////////
+                                ENUMS
+    //////////////////////////////////////////////////////////////*/
+    enum Status {
+        Manufactured,
+        ReadyForSale
+    }
 
-    bytes32 public constant MANUFACTURER_ROLE = keccak256("MANUFACTURER_ROLE");
-    bytes32 public constant DISTRIBUTOR_ROLE  = keccak256("DISTRIBUTOR_ROLE");
-    bytes32 public constant RETAILER_ROLE     = keccak256("RETAILER_ROLE");
-
+    /*//////////////////////////////////////////////////////////////
+                                STRUCTS
+    //////////////////////////////////////////////////////////////*/
     struct Batch {
-        bytes32 id;
-        string name;
-        address creator;
-        bool exists;
-    }
-
-    struct Transfer {
-        address from;
-        address to;
+        uint256 batchId;
+        string productName;
+        address manufacturer;
+        address supplier;
+        Status status;
         uint256 timestamp;
-        string location;
     }
 
-    mapping(bytes32 => Batch) public batches;
-    mapping(bytes32 => Transfer[]) public transferHistory;
+    /*//////////////////////////////////////////////////////////////
+                                STORAGE
+    //////////////////////////////////////////////////////////////*/
+    uint256 private nextBatchId;
 
-    event BatchCreated(bytes32 batchId);
-    event BatchTransferred(bytes32 batchId, address from, address to);
+    mapping(uint256 => Batch) private batches;
 
+    mapping(address => bool) public manufacturers;
+    mapping(address => bool) public suppliers;
+
+    address public owner;
+
+    /*//////////////////////////////////////////////////////////////
+                                EVENTS
+    //////////////////////////////////////////////////////////////*/
+    event ManufacturerAdded(address indexed manufacturer);
+    event SupplierAdded(address indexed supplier);
+
+    event BatchCreated(
+        uint256 indexed batchId,
+        string productName,
+        address indexed manufacturer,
+        uint256 timestamp
+    );
+
+    event StatusUpdated(
+        uint256 indexed batchId,
+        Status newStatus,
+        address indexed updatedBy,
+        uint256 timestamp
+    );
+
+    /*//////////////////////////////////////////////////////////////
+                                MODIFIERS
+    //////////////////////////////////////////////////////////////*/
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Not owner");
+        _;
+    }
+
+    modifier onlyManufacturer() {
+        if (!manufacturers[msg.sender]) revert NotManufacturer();
+        _;
+    }
+
+    modifier onlySupplier() {
+        if (!suppliers[msg.sender]) revert NotSupplier();
+        _;
+    }
+
+    modifier validBatch(uint256 _batchId) {
+        if (_batchId >= nextBatchId) revert InvalidBatch();
+        _;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                                CONSTRUCTOR
+    //////////////////////////////////////////////////////////////*/
     constructor() {
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        owner = msg.sender;
+        manufacturers[msg.sender] = true;
+        emit ManufacturerAdded(msg.sender);
     }
 
-    function createBatch(bytes32 batchId, string memory name)
+    /*//////////////////////////////////////////////////////////////
+                            ROLE MANAGEMENT
+    //////////////////////////////////////////////////////////////*/
+    function addManufacturer(address _manufacturer) external onlyOwner {
+        manufacturers[_manufacturer] = true;
+        emit ManufacturerAdded(_manufacturer);
+    }
+
+    function addSupplier(address _supplier) external onlyOwner {
+        suppliers[_supplier] = true;
+        emit SupplierAdded(_supplier);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                        MANUFACTURER FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+    function createBatch(string calldata _productName)
         external
-        onlyRole(MANUFACTURER_ROLE)
+        onlyManufacturer
+        returns (uint256)
     {
-        require(!batches[batchId].exists, "Batch already exists");
+        uint256 batchId = nextBatchId++;
 
-        batches[batchId] = Batch(
+        batches[batchId] = Batch({
+            batchId: batchId,
+            productName: _productName,
+            manufacturer: msg.sender,
+            supplier: address(0),
+            status: Status.Manufactured,
+            timestamp: block.timestamp
+        });
+
+        emit BatchCreated(
             batchId,
-            name,
+            _productName,
             msg.sender,
-            true
+            block.timestamp
         );
 
-        emit BatchCreated(batchId);
+        return batchId;
     }
 
-    function transferBatch(
-        bytes32 batchId,
-        address to,
-        string memory location
-    ) external {
-        require(batches[batchId].exists, "Invalid batch");
+    /*//////////////////////////////////////////////////////////////
+                        SUPPLIER FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+    function markReadyForSale(uint256 _batchId)
+        external
+        onlySupplier
+        validBatch(_batchId)
+    {
+        Batch storage batch = batches[_batchId];
 
-        transferHistory[batchId].push(
-            Transfer(msg.sender, to, block.timestamp, location)
+        if (batch.status != Status.Manufactured) {
+            revert InvalidStatusTransition();
+        }
+
+        batch.status = Status.ReadyForSale;
+        batch.supplier = msg.sender;
+        batch.timestamp = block.timestamp;
+
+        emit StatusUpdated(
+            _batchId,
+            Status.ReadyForSale,
+            msg.sender,
+            block.timestamp
         );
-
-        emit BatchTransferred(batchId, msg.sender, to);
     }
 
-    function getTransfers(bytes32 batchId)
+    /*//////////////////////////////////////////////////////////////
+                        VIEW FUNCTIONS (CONSUMER)
+    //////////////////////////////////////////////////////////////*/
+    function getBatch(uint256 _batchId)
         external
         view
-        returns (Transfer[] memory)
+        validBatch(_batchId)
+        returns (Batch memory)
     {
-        return transferHistory[batchId];
+        return batches[_batchId];
+    }
+
+    function getCurrentBatchId() external view returns (uint256) {
+        return nextBatchId;
     }
 }
