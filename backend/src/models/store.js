@@ -1,9 +1,11 @@
 import { Batch, Transfer, Alert } from "./mongoModels.js";
 
-export async function addBatch(batchId) {
+export async function addBatch(batchId, details = {}) {
   const exists = await Batch.findOne({ batchId });
   if (!exists) {
-    await Batch.create({ batchId });
+    await Batch.create({ batchId, ...details });
+  } else {
+    await Batch.updateOne({ batchId }, { $set: details });
   }
 }
 

@@ -9,6 +9,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.get("/", (req, res) => {
+  res.send(
+    "Supply Integrity Track Backend is running. Use /api/batches endpoints.",
+  );
+});
+
 app.use("/api/batches", batchRoutes);
 
 const PORT = process.env.PORT || 5000;

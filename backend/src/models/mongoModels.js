@@ -2,6 +2,11 @@ import mongoose from "mongoose";
 
 const batchSchema = new mongoose.Schema({
   batchId: { type: String, required: true, unique: true },
+  productName: { type: String },
+  manufacturer: { type: String },
+  supplier: { type: String },
+  status: { type: String },
+  timestamp: { type: Date },
   createdAt: { type: Date, default: Date.now },
 });
 

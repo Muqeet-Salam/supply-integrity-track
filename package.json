@@ -3,6 +3,10 @@
     "hardhat": "^3.1.7"
   },
   "dependencies": {
-    "mongoose": "^9.1.6"
+    "axios": "^1.13.4",
+    "form-data": "^4.0.5",
+    "fs-extra": "^11.3.3",
+    "mongoose": "^9.1.6",
+    "multer": "^2.0.2"
   }
 }

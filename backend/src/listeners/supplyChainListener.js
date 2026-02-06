@@ -12,8 +12,13 @@ export async function startListener() {
   contract.on(
     "BatchCreated",
     async (batchId, productName, manufacturer, supplier, status, timestamp) => {
-      await addBatch(batchId.toString());
-      // Optionally store more details if needed
+      await addBatch(batchId.toString(), {
+        productName,
+        manufacturer,
+        supplier,
+        status: status.toString(),
+        timestamp: new Date(Number(timestamp)),
+      });
     },
   );
 
