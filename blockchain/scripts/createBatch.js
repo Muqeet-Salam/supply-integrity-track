@@ -48,7 +48,7 @@ async function main() {
 
   // Get the new batch ID
   const newBatchId = await supplyChain.getCurrentBatchId();
-  const createdBatchId = newBatchId - 1n; // The ID of the batch we just created
+  const createdBatchId = Number(newBatchId) - 1; // The ID of the batch we just created
   
   console.log("🏭 New batch created!");
   console.log("   Batch ID:", createdBatchId.toString());
