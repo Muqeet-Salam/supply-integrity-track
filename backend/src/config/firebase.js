@@ -41,6 +41,10 @@ if (!db) {
         const base = rtdbUrl.replace(/\/+$/,'');
         return {
           doc(id) {
+            // Auto-generate a unique key when no id is provided (like Firestore)
+            if (!id) {
+              id = `${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+            }
             const path = `${base}/${encodeURIComponent(name)}/${encodeURIComponent(id)}.json`;
             return {
               set: async (data, opts) => {

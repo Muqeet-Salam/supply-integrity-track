@@ -53,8 +53,8 @@ class ContractService {
   async transferBatch(batchId, nextHandler, location) {
     if (USE_REAL_API) {
       try {
-        const from = this.signer ? await this.signer.getAddress() : undefined;
-        return await realAPI.addTransfer(batchId, from, nextHandler);
+        const from = this.signer ? await this.signer.getAddress() : 'unknown';
+        return await realAPI.addTransfer(batchId, from, nextHandler, location);
       } catch (err) {
         console.warn('API transferBatch failed, falling back to mock:', err.message);
       }

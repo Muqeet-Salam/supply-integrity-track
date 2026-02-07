@@ -14,11 +14,11 @@ const api = axios.create({
 
 // ── Status helpers ──────────────────────────────────────────────
 // Smart-contract status enum: 0 = Manufactured, 1 = ReadyForSale
-const STATUS_MAP = { 0: 'CREATED', 1: 'DELIVERED' };
+const STATUS_MAP = { 0: 'Manufactured', 1: 'Ready for Sale' };
 
 function mapStatus(raw) {
   if (typeof raw === 'string') return raw;
-  return STATUS_MAP[raw] ?? 'CREATED';
+  return STATUS_MAP[raw] ?? 'Manufactured';
 }
 
 // ── Data normalisers ────────────────────────────────────────────
@@ -116,8 +116,8 @@ export async function getBatchHistory(batchId) {
 }
 
 /** Record an off-chain transfer. */
-export async function addTransfer(batchId, from, to) {
-  const res = await api.post(`/batches/${encodeURIComponent(batchId)}/transfers`, { from, to });
+export async function addTransfer(batchId, from, to, location) {
+  const res = await api.post(`/batches/${encodeURIComponent(batchId)}/transfers`, { from, to, location });
   return res.data;
 }
 

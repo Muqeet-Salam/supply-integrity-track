@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Truck, QrCode, Home, Package, Search } from 'lucide-react';
+import { Truck, QrCode, Home, Package, Search, CheckCircle } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-hot-toast';
 import { mockContract } from '../services/mockContract';
@@ -22,6 +22,7 @@ const DistributorDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [batchData, setBatchData] = useState(null);
   const [transferSuccess, setTransferSuccess] = useState(false);
+  const [markingReady, setMarkingReady] = useState(false);
 
   const loadBatch = async (batchId) => {
     setLoading(true);
@@ -82,6 +83,22 @@ const DistributorDashboard = () => {
       toast.error('Failed to transfer batch. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleMarkReady = async () => {
+    if (!batchData) return;
+    setMarkingReady(true);
+    try {
+      await mockContract.confirmReceipt(batchData.batchId);
+      toast.success('Batch marked as Ready for Sale!');
+      // Reload batch to reflect updated status
+      await loadBatch(batchData.batchId);
+    } catch (error) {
+      console.error('Failed to mark ready:', error);
+      toast.error('Failed to mark batch as ready for sale.');
+    } finally {
+      setMarkingReady(false);
     }
   };
 
@@ -237,6 +254,29 @@ const DistributorDashboard = () => {
                   <p className="text-white">{batchData.status || batchData.location || 'N/A'}</p>
                 </div>
               </div>
+
+              {/* Mark Ready for Sale button — show when status is still Manufactured */}
+              {(batchData.status === 'CREATED' || batchData.status === 'Manufactured' || batchData.status === 0 || batchData.status === '0' || !batchData.status) && (
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={handleMarkReady}
+                  disabled={markingReady}
+                  className="mt-6 w-full flex items-center justify-center gap-2 py-3 rounded-lg bg-green-600 hover:bg-green-500 text-white font-semibold transition-colors disabled:opacity-50"
+                >
+                  {markingReady ? (
+                    <>
+                      <div className="spinner w-4 h-4" />
+                      <span>Processing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle size={20} />
+                      <span>Mark Ready for Sale</span>
+                    </>
+                  )}
+                </motion.button>
+              )}
             </div>
 
             {/* History */}

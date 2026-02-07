@@ -7,10 +7,17 @@ export async function addBatch(batchId, data = {}) {
     {
       batchId: id,
       createdAt: Date.now(),
+      status: "Manufactured",
       ...data,
     },
     { merge: true }
   );
+}
+
+export async function updateBatchStatus(batchId, status) {
+  const id = String(batchId);
+  const ref = db.collection("batches").doc(id);
+  await ref.set({ status, updatedAt: Date.now() }, { merge: true });
 }
 
 export async function addTransfer(transfer) {

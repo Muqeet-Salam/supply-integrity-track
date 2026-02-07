@@ -6,6 +6,7 @@ import {
   addBatch,
   addTransfer,
   getAllBatches,
+  updateBatchStatus,
 } from "../models/store.js";
 import {
   contract,
@@ -136,9 +137,16 @@ router.post("/", async (req, res) => {
     const currentId = await contract.getCurrentBatchId();
     const createdId = Number(currentId) - 1;
 
-    await addBatch(createdId, { productName });
+    // Fetch on-chain batch to get manufacturer address
+    let manufacturer = addresses.manufacturer;
+    try {
+      const onChain = await contract.getBatch(createdId);
+      manufacturer = onChain.manufacturer || manufacturer;
+    } catch (_) {}
 
-    res.json({ success: true, batchId: createdId, productName });
+    await addBatch(createdId, { productName, manufacturer });
+
+    res.json({ success: true, batchId: createdId, productName, manufacturer });
   } catch (err) {
     console.error("Error creating batch:", err);
     res.status(500).json({ error: "Failed to create batch" });
@@ -173,6 +181,9 @@ router.post("/:id/ready", async (req, res) => {
     console.log("markReadyForSale tx confirmed in block", receipt.blockNumber);
 
     const updatedBatch = await contract.getBatch(batchId);
+
+    // Update status in Firebase
+    await updateBatchStatus(batchId, "Ready for Sale");
 
     res.json({
       success: true,
@@ -247,14 +258,14 @@ router.get("/:id/history", async (req, res) => {
 // POST add transfer (off-chain tracking only)
 router.post("/:id/transfers", async (req, res) => {
   const { id } = req.params;
-  const { from, to } = req.body;
+  const { from, to, location } = req.body;
 
-  if (!from || !to) {
-    return res.status(400).json({ error: "from and to required" });
+  if (!to) {
+    return res.status(400).json({ error: "'to' address is required" });
   }
 
   try {
-    const transfer = { batchId: id, from, to, timestamp: Date.now() };
+    const transfer = { batchId: id, from: from || 'unknown', to, location: location || '', timestamp: Date.now() };
     await addTransfer(transfer);
 
     res.json({ success: true, transfer });
