@@ -1,0 +1,11 @@
+{
+  "scripts": {
+    "start": "concurrently \"npm --prefix backend run dev\" \"npm --prefix supplied-main run dev\"",
+    "start:backend": "npm --prefix backend run dev",
+    "start:frontend": "npm --prefix supplied-main run dev"
+  },
+  "devDependencies": {
+    "concurrently": "^7.6.0",
+    "hardhat": "^3.1.7"
+  }
+}

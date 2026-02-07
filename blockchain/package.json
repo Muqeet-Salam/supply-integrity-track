@@ -1,0 +1,26 @@
+{
+  "name": "supply-integrity-track",
+  "version": "1.0.0",
+  "scripts": {
+    "compile": "npx hardhat compile",
+    "deploy": "npx hardhat run scripts/deploy.js --network localhost",
+    "node": "npx hardhat node",
+    "setup-roles": "npx hardhat run scripts/setupRoles.js --network localhost",
+    "create-batch": "node scripts/createBatchWrapper.js",
+    "mark-ready": "node scripts/markReadyWrapper.js",
+    "view-history": "node scripts/viewHistoryWrapper.js",
+    "generate-qr": "node utils/generateQR.js",
+    "scan-qr": "node utils/scanQR.js",
+    "batch-qr-history": "node utils/batchQRHistory.js",
+    "update-qr-live": "node scripts/updateQRLiveWrapper.js",
+    "workflow-help": "node utils/workflowHelper.js"
+  },
+  "devDependencies": {
+    "hardhat": "^2.19.4",
+    "@nomicfoundation/hardhat-toolbox": "^2.0.2"
+  },
+  "dependencies": {
+    "qrcode": "^1.5.4",
+    "qrcode-reader": "^1.0.4"
+  }
+}
