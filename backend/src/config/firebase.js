@@ -43,7 +43,14 @@ if (!db) {
           doc(id) {
             const path = `${base}/${encodeURIComponent(name)}/${encodeURIComponent(id)}.json`;
             return {
-              set: async (data) => {
+              set: async (data, opts) => {
+                // Support { merge: true } by reading existing data first
+                if (opts && opts.merge) {
+                  const existing = await fetch(path).then(r => r.json()).catch(() => null);
+                  if (existing && typeof existing === 'object') {
+                    data = { ...existing, ...data };
+                  }
+                }
                 const res = await fetch(path, { method: 'PUT', body: JSON.stringify(data), headers: { 'Content-Type': 'application/json' } });
                 return res.json();
               },
@@ -58,10 +65,30 @@ if (!db) {
               }
             };
           },
+          orderBy(field, direction) {
+            return {
+              get: async () => {
+                const url = `${base}/${encodeURIComponent(name)}.json`;
+                const res = await fetch(url);
+                const json = await res.json();
+                const docs = [];
+                if (json && typeof json === 'object') {
+                  for (const k of Object.keys(json)) {
+                    docs.push({ data: () => json[k] });
+                  }
+                }
+                docs.sort((a, b) => {
+                  const va = a.data()?.[field] ?? 0;
+                  const vb = b.data()?.[field] ?? 0;
+                  return direction === 'desc' ? vb - va : va - vb;
+                });
+                return { docs };
+              },
+            };
+          },
           where(field, op, value) {
             return {
               get: async () => {
-                // Use simple filter by fetching all and filtering locally (RTDB REST supports queries but needs orderBy)
                 const url = `${base}/${encodeURIComponent(name)}.json`;
                 const res = await fetch(url);
                 const json = await res.json();
@@ -79,10 +106,10 @@ if (!db) {
         };
       }
     };
-
-    // db set to RTDB REST adapter above
   }
+}
 
+if (!db) {
   // Simple in-memory Firestore-like fallback for development/testing
   const mem = Object.create(null);
   let autoId = 0;
