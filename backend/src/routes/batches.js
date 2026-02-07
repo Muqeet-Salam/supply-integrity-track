@@ -32,34 +32,28 @@ function formatOnChainBatch(batch) {
   };
 }
 
-// GET all batches (on-chain overview)
+// GET all batches (Firebase as source of truth, enriched with on-chain data)
 router.get("/", async (req, res) => {
   try {
-    const nextId = Number(await contract.getCurrentBatchId());
+    const dbBatches = await getAllBatches();
     const batches = [];
 
-    for (let i = 0; i < nextId; i++) {
+    for (const dbBatch of dbBatches) {
+      const onChainId = dbBatch.onChainId ?? dbBatch.batchId;
       try {
-        const raw = await contract.getBatch(i);
-        const batch = formatOnChainBatch(raw);
-        // Merge any DB metadata
-        const dbBatch = await getBatchFromDb(i);
-        batches.push({ ...batch, ...(dbBatch || {}) });
+        const raw = await contract.getBatch(onChainId);
+        const onChain = formatOnChainBatch(raw);
+        batches.push({ ...onChain, ...dbBatch });
       } catch {
-        // skip invalid
+        // On-chain lookup failed, return DB data only
+        batches.push(dbBatch);
       }
     }
 
     res.json(batches);
   } catch (err) {
-    // Fallback: return Firebase-only list
-    try {
-      const dbBatches = await getAllBatches();
-      res.json(dbBatches);
-    } catch (fbErr) {
-      console.error("Error listing batches:", err);
-      res.status(500).json({ error: "Failed to list batches" });
-    }
+    console.error("Error listing batches:", err);
+    res.status(500).json({ error: "Failed to list batches" });
   }
 });
 
@@ -79,16 +73,18 @@ router.get("/:id", async (req, res) => {
   const { id } = req.params;
 
   try {
+    const dbBatch = await getBatchFromDb(id);
+
+    // Resolve on-chain ID from Firebase (onChainId field), fallback to id itself
+    const onChainId = dbBatch?.onChainId ?? id;
     let onChainBatch = null;
 
     try {
-      const rawBatch = await contract.getBatch(id);
+      const rawBatch = await contract.getBatch(onChainId);
       onChainBatch = formatOnChainBatch(rawBatch);
     } catch (e) {
       // If batch doesn't exist on-chain, we'll just return DB data if present
     }
-
-    const dbBatch = await getBatchFromDb(id);
 
     if (!onChainBatch && !dbBatch) {
       return res.status(404).json({ error: "Batch not found" });
@@ -137,21 +133,21 @@ router.post("/", async (req, res) => {
     console.log("createBatch tx confirmed in block", receipt.blockNumber);
 
     const currentId = await contract.getCurrentBatchId();
-    const createdId = Number(currentId) - 1;
+    const onChainId = Number(currentId) - 1;
 
     // Fetch on-chain batch to get manufacturer address
     let manufacturer = addresses.manufacturer;
     try {
-      const onChain = await contract.getBatch(createdId);
+      const onChain = await contract.getBatch(onChainId);
       manufacturer = onChain.manufacturer || manufacturer;
     } catch (_) {}
 
-    // Get Firebase counter and increment
-    const batchCounter = await getNextBatchCounter();
-    await addBatch(createdId, { productName, manufacturer, batchNumber: batchCounter });
-    await incrementBatchCounter(batchCounter);
+    // Use counter as the sequential batchId (1, 2, 3...)
+    const batchId = await getNextBatchCounter();
+    await addBatch(batchId, { productName, manufacturer, onChainId });
+    await incrementBatchCounter(batchId);
 
-    res.json({ success: true, batchId: createdId, batchNumber: batchCounter, productName, manufacturer });
+    res.json({ success: true, batchId, productName, manufacturer });
   } catch (err) {
     console.error("Error creating batch:", err);
     res.status(500).json({ error: "Failed to create batch" });
@@ -168,14 +164,18 @@ router.post("/:id/ready", async (req, res) => {
       return res.status(400).json({ error: "Invalid batch id" });
     }
 
+    // Resolve on-chain ID from Firebase
+    const dbBatch = await getBatchFromDb(batchId);
+    const onChainId = dbBatch?.onChainId ?? batchId;
+
     let receipt;
     if (process.env.SUPPLIER_PRIVATE_KEY) {
       const sc = getSupplierContract();
-      const tx = await sc.markReadyForSale(batchId);
+      const tx = await sc.markReadyForSale(onChainId);
       receipt = await tx.wait();
     } else {
       const data = contract.interface.encodeFunctionData("markReadyForSale", [
-        batchId,
+        onChainId,
       ]);
       const txHash = await provider.send("eth_sendTransaction", [
         { to: addresses.contract, from: addresses.supplier, data },
@@ -185,7 +185,7 @@ router.post("/:id/ready", async (req, res) => {
 
     console.log("markReadyForSale tx confirmed in block", receipt.blockNumber);
 
-    const updatedBatch = await contract.getBatch(batchId);
+    const updatedBatch = await contract.getBatch(onChainId);
 
     // Update status in Firebase
     await updateBatchStatus(batchId, "Ready for Sale");
@@ -210,8 +210,12 @@ router.get("/:id/history", async (req, res) => {
       return res.status(400).json({ error: "Invalid batch id" });
     }
 
-    const createdFilter = contract.filters.BatchCreated(batchId);
-    const statusFilter = contract.filters.StatusUpdated(batchId);
+    // Resolve on-chain ID from Firebase
+    const dbBatch = await getBatchFromDb(batchId);
+    const onChainId = dbBatch?.onChainId ?? batchId;
+
+    const createdFilter = contract.filters.BatchCreated(onChainId);
+    const statusFilter = contract.filters.StatusUpdated(onChainId);
 
     const [createdEvents, statusEvents] = await Promise.all([
       contract.queryFilter(createdFilter),
