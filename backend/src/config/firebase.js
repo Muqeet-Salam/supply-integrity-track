@@ -114,70 +114,8 @@ if (!db) {
 }
 
 if (!db) {
-  // Simple in-memory Firestore-like fallback for development/testing
-  const mem = Object.create(null);
-  let autoId = 0;
-
-  db = {
-    collection(name) {
-      if (!mem[name]) mem[name] = new Map();
-
-      return {
-        doc(id) {
-          let key = id;
-          if (!key) {
-            key = String(++autoId);
-          }
-
-          return {
-            set: async (data) => {
-              mem[name].set(String(key), data);
-              return;
-            },
-            get: async () => {
-              const exists = mem[name].has(String(key));
-              return {
-                exists,
-                data: () => (exists ? mem[name].get(String(key)) : undefined),
-              };
-            },
-          };
-        },
-        orderBy(field, direction) {
-          // Return a query-like object with .get() that returns sorted docs
-          return {
-            get: async () => {
-              const docs = [];
-              for (const [_k, v] of mem[name].entries()) {
-                docs.push({ data: () => v });
-              }
-              docs.sort((a, b) => {
-                const va = a.data()[field] ?? 0;
-                const vb = b.data()[field] ?? 0;
-                return direction === 'desc' ? vb - va : va - vb;
-              });
-              return { docs };
-            },
-          };
-        },
-        where(field, op, value) {
-          return {
-            get: async () => {
-              const docs = [];
-              for (const [_k, v] of mem[name].entries()) {
-                if (v && v[field] === value) {
-                  docs.push({ data: () => v });
-                }
-              }
-              return { docs };
-            },
-          };
-        },
-      };
-    },
-  };
-
-  console.log("Using in-memory Firestore fallback (FIREBASE not configured)");
+  console.error("FATAL: No Firebase database configured. Set FIREBASE_DATABASE_URL or FIREBASE_SERVICE_ACCOUNT in .env");
+  process.exit(1);
 }
 
 export { db };
