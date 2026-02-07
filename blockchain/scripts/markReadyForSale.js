@@ -4,20 +4,22 @@ const path = require("path");
 
 async function main() {
   console.log("🏪 Marking batch ready for sale...\n");
-  
+
   // Load deployment info
   const deploymentPath = path.join(__dirname, "../deployment.json");
   if (!fs.existsSync(deploymentPath)) {
-    throw new Error("❌ deployment.json not found. Please run deployment first: npm run deploy");
+    throw new Error(
+      "❌ deployment.json not found. Please run deployment first: npm run deploy",
+    );
   }
-  
+
   const deployment = JSON.parse(fs.readFileSync(deploymentPath, "utf8"));
   console.log("📄 Contract address:", deployment.contractAddress);
-  
+
   // Get signers - use the third account as supplier
   const signers = await hre.ethers.getSigners();
   const [deployer, manufacturer, supplier] = signers;
-  
+
   console.log("👤 Marking ready with supplier:", supplier.address);
 
   // Connect to the deployed contract
@@ -27,26 +29,38 @@ async function main() {
   // Verify supplier role
   const isSupplier = await supplyChain.suppliers(supplier.address);
   if (!isSupplier) {
-    throw new Error("❌ Account is not registered as supplier. Please run: npm run setup-roles");
+    throw new Error(
+      "❌ Account is not registered as supplier. Please run: npm run setup-roles",
+    );
   }
-  
+
   console.log("✅ Supplier role verified");
 
   // Get batch ID from environment variable or command line or use most recent
   let batchId;
   const envBatchId = process.env.BATCH_ID;
   const specifiedBatchId = envBatchId || process.argv[2];
-  
+
   // Get current batch count for validation
   const currentBatchId = await supplyChain.getCurrentBatchId();
   if (Number(currentBatchId) === 0) {
-    throw new Error("❌ No batches found. Please create a batch first: npm run create-batch \"Product Name\"");
+    throw new Error(
+      '❌ No batches found. Please create a batch first: npm run create-batch "Product Name"',
+    );
   }
 
   if (specifiedBatchId !== undefined) {
     const parsedBatchId = parseInt(specifiedBatchId);
-    if (isNaN(parsedBatchId) || parsedBatchId < 0 || parsedBatchId >= Number(currentBatchId)) {
-      throw new Error(`❌ Invalid batch ID: ${specifiedBatchId}. Available range: 0 to ${Number(currentBatchId) - 1}`);
+    if (
+      isNaN(parsedBatchId) ||
+      parsedBatchId < 0 ||
+      parsedBatchId >= Number(currentBatchId)
+    ) {
+      throw new Error(
+        `❌ Invalid batch ID: ${specifiedBatchId}. Available range: 0 to ${
+          Number(currentBatchId) - 1
+        }`,
+      );
     }
     batchId = parsedBatchId;
     console.log("🎯 Working with specified batch ID:", batchId);
@@ -62,20 +76,33 @@ async function main() {
   console.log("📊 Current batch status:");
   console.log("   Product:", batchData.productName);
   console.log("   Manufacturer:", batchData.manufacturer);
-  console.log("   Status:", Number(batchData.status) === 0 ? "Manufactured" : "Ready for Sale");
-  console.log("   Current Supplier:", batchData.supplier === hre.ethers.ZeroAddress ? "Not assigned" : batchData.supplier);
+  console.log(
+    "   Status:",
+    Number(batchData.status) === 0 ? "Manufactured" : "Ready for Sale",
+  );
+  console.log(
+    "   Current Supplier:",
+    batchData.supplier === hre.ethers.ZeroAddress
+      ? "Not assigned"
+      : batchData.supplier,
+  );
 
   // Check if batch can be marked ready for sale
   if (Number(batchData.status) !== 0) {
-    const statusText = Number(batchData.status) === 1 ? "Ready for Sale" : "Unknown (" + batchData.status + ")";
-    throw new Error(`❌ Batch is not in 'Manufactured' status. Current status: ${statusText}. This batch has already been processed.`);
+    const statusText =
+      Number(batchData.status) === 1
+        ? "Ready for Sale"
+        : "Unknown (" + batchData.status + ")";
+    throw new Error(
+      `❌ Batch is not in 'Manufactured' status. Current status: ${statusText}. This batch has already been processed.`,
+    );
   }
 
   // Mark batch ready for sale
   console.log("\n🔄 Marking batch ready for sale...");
   const tx = await supplyChain.connect(supplier).markReadyForSale(batchId);
   console.log("⏳ Transaction sent, waiting for confirmation...");
-  
+
   const receipt = await tx.wait();
   console.log("✅ Transaction confirmed in block:", receipt.blockNumber);
 
@@ -87,11 +114,81 @@ async function main() {
   console.log("   Product:", updatedBatchData.productName);
   console.log("   Manufacturer:", updatedBatchData.manufacturer);
   console.log("   Supplier:", updatedBatchData.supplier);
-  console.log("   Status:", Number(updatedBatchData.status) === 1 ? "✅ Ready for Sale" : "❓ Unknown");
-  console.log("   Updated At:", new Date(Number(updatedBatchData.timestamp) * 1000).toLocaleString());
+  console.log(
+    "   Status:",
+    Number(updatedBatchData.status) === 1 ? "✅ Ready for Sale" : "❓ Unknown",
+  );
+  console.log(
+    "   Updated At:",
+    new Date(Number(updatedBatchData.timestamp) * 1000).toLocaleString(),
+  );
 
   console.log("\n🏪 Batch is now ready for sale!");
   console.log("💡 Next step: npm run view-history");
+
+  // --- Generate and POST QR code directly to backend ---
+  try {
+    const QRCode = require("qrcode");
+    const axios = require("axios");
+    const FormData = require("form-data");
+
+    // Prepare QR data
+    const qrData = {
+      batchId: updatedBatchData.batchId.toString(),
+      contractAddress: deployment.contractAddress,
+      network: deployment.network || "localhost",
+      productName: updatedBatchData.productName,
+      manufacturer: updatedBatchData.manufacturer,
+      supplier: updatedBatchData.supplier,
+      status:
+        Number(updatedBatchData.status) === 0
+          ? "Manufactured"
+          : "Ready for Sale",
+      updatedAt: new Date(
+        Number(updatedBatchData.timestamp) * 1000,
+      ).toISOString(),
+      verificationUrl:
+        deployment.network === "localhost"
+          ? `Localhost network - Contract: ${deployment.contractAddress}`
+          : `https://etherscan.io/address/${deployment.contractAddress}`,
+      type: "supply-chain-batch-updated",
+    };
+
+    // Generate QR code image as buffer
+    const qrImageBuffer = await QRCode.toBuffer(JSON.stringify(qrData), {
+      width: 400,
+      margin: 2,
+      color: { dark: "#000000", light: "#FFFFFF" },
+    });
+
+    // Prepare form data
+    const form = new FormData();
+    form.append("json", Buffer.from(JSON.stringify(qrData)), {
+      filename: `batch_${updatedBatchData.batchId}_live_qr_data.json`,
+      contentType: "application/json",
+    });
+    form.append("image", qrImageBuffer, {
+      filename: `batch_${updatedBatchData.batchId}_live_qr.png`,
+      contentType: "image/png",
+    });
+
+    // POST to backend
+    const BACKEND_URL =
+      process.env.BACKEND_URL ||
+      "http://localhost:5000/api/batches/qr-codes/upload";
+    const response = await axios.post(BACKEND_URL, form, {
+      headers: form.getHeaders(),
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity,
+    });
+    console.log("✅ QR Code generated and uploaded to backend!");
+    console.log(response.data);
+  } catch (qrError) {
+    console.warn(
+      "⚠️ QR generation/upload failed, but batch was updated successfully:",
+      qrError.message,
+    );
+  }
 }
 
 main()
