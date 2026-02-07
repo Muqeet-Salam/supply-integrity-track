@@ -1,5 +1,8 @@
+
 node_modules
 .env
+build/
+qr-codes/
 
 # Hardhat files
 /cache
