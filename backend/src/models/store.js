@@ -1,5 +1,25 @@
 import { db } from "../config/firebase.js";
 
+/**
+ * Get the next batch counter value from Firebase.
+ * The counter doc lives at counters/batches with field { value: N }.
+ * Starts at 1 if it doesn't exist yet.
+ */
+export async function getNextBatchCounter() {
+  const ref = db.collection("counters").doc("batches");
+  const doc = await ref.get();
+  if (!doc.exists || doc.data() === undefined) {
+    return 1;
+  }
+  return doc.data().value || 1;
+}
+
+/** Increment the batch counter after a successful creation. */
+export async function incrementBatchCounter(currentValue) {
+  const ref = db.collection("counters").doc("batches");
+  await ref.set({ value: currentValue + 1 });
+}
+
 export async function addBatch(batchId, data = {}) {
   const id = String(batchId);
   const ref = db.collection("batches").doc(id);

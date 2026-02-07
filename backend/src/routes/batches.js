@@ -7,6 +7,8 @@ import {
   addTransfer,
   getAllBatches,
   updateBatchStatus,
+  getNextBatchCounter,
+  incrementBatchCounter,
 } from "../models/store.js";
 import {
   contract,
@@ -144,9 +146,12 @@ router.post("/", async (req, res) => {
       manufacturer = onChain.manufacturer || manufacturer;
     } catch (_) {}
 
-    await addBatch(createdId, { productName, manufacturer });
+    // Get Firebase counter and increment
+    const batchCounter = await getNextBatchCounter();
+    await addBatch(createdId, { productName, manufacturer, batchNumber: batchCounter });
+    await incrementBatchCounter(batchCounter);
 
-    res.json({ success: true, batchId: createdId, productName, manufacturer });
+    res.json({ success: true, batchId: createdId, batchNumber: batchCounter, productName, manufacturer });
   } catch (err) {
     console.error("Error creating batch:", err);
     res.status(500).json({ error: "Failed to create batch" });
