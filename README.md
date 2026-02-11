@@ -51,3 +51,5 @@ Notes
 A blockchain-simulation supply chain tracking application for transparent product verification from manufacturer to consumer.
 
 Built with **React + Vite + Tailwind CSS + Ethers.js**.
+
+Contributers - @Muqeet-Salam @Syed-Khizerr @SyedEshaan-ctrl @Shariqzain @zakerali6786
