@@ -3,7 +3,24 @@ supply chain integrity tracking based on blockchain technology
 
 Quick start (development)
 
-- Start the backend (from repository root):
+- Start the blockchain setup:
+
+```bash
+cd blockchain
+npm install
+npx hardhat compile
+npx hardhat node
+```
+
+- Setup roles for blockchain (in a seperate terminal):
+
+```bash
+cd blockchain
+npm run deploy
+npm run create-roles
+```
+
+- Start the backend (in a seperate terminal):
 
 ```bash
 cd backend
@@ -31,3 +48,6 @@ Notes
 - The backend will use an in-memory Firestore fallback when Firebase credentials are not provided.
 - For blockchain features, set `RPC_URL` in the backend or run a local Hardhat node.
 
+A blockchain-simulation supply chain tracking application for transparent product verification from manufacturer to consumer.
+
+Built with **React + Vite + Tailwind CSS + Ethers.js**.
